@@ -23,6 +23,7 @@ func Socket(socket string, handler http.Handler) {
 	}
 
 	defer l.Close()
+	defer os.Remove(socket)
 
 	go func() {
 		log.Println("listening on", socket)
