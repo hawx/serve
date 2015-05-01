@@ -1,4 +1,4 @@
-# servers-gonna-serve [![docs](http://godoc.org/github.com/hawx/serve?status.svg)](http://godoc.org/github.com/hawx/serve)
+# servers-gonna-serve [![docs](http://godoc.org/hawx.me/code/serve?status.svg)](http://godoc.org/hawx.me/code/serve)
 
 A small package that wraps up serving a `http.Handler` via a port or socket. It
 catches interrupts so any `defer`s will run properly.
@@ -7,7 +7,7 @@ catches interrupts so any `defer`s will run properly.
 package main
 
 import (
-  "github.com/hawx/serve"
+  "hawx.me/code/serve"
   "net/http"
   "flag"
 )
