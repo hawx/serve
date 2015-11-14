@@ -1,9 +1,9 @@
 package serve
 
 import (
+	"log"
 	"net"
 	"net/http"
-	"log"
 	"os"
 	"os/signal"
 )
@@ -19,7 +19,8 @@ func Serve(port, socket string, handler http.Handler) {
 func Socket(socket string, handler http.Handler) {
 	l, err := net.Listen("unix", socket)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	defer l.Close()
@@ -27,7 +28,9 @@ func Socket(socket string, handler http.Handler) {
 
 	go func() {
 		log.Println("listening on", socket)
-		log.Fatal(http.Serve(l, handler))
+		if err := http.Serve(l, handler); err != nil {
+			log.Println(err)
+		}
 	}()
 
 	catchInterrupt()
@@ -36,7 +39,9 @@ func Socket(socket string, handler http.Handler) {
 func Port(port string, handler http.Handler) {
 	go func() {
 		log.Println("listening on port :" + port)
-		log.Fatal(http.ListenAndServe(":"+port, handler))
+		if err := http.ListenAndServe(":"+port, handler); err != nil {
+			log.Println(err)
+		}
 	}()
 
 	catchInterrupt()
