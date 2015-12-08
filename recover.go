@@ -33,7 +33,7 @@ func (h *recoverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func Recover(h http.Handler) http.Handler {
-	return &RecoverHandler{
+	return &recoverHandler{
 		Action: log.Println,
 		next:   h,
 	}
