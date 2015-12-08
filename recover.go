@@ -34,7 +34,7 @@ func (h *recoverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func Recover(h http.Handler) http.Handler {
 	return &recoverHandler{
-		Action: log.Println,
+		Action: func(err error) { log.Println(err) },
 		next:   h,
 	}
 }
