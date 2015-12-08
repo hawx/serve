@@ -1,4 +1,4 @@
-package handlers
+package serve
 
 import (
 	"errors"
@@ -6,12 +6,12 @@ import (
 	"net/http"
 )
 
-type RecoverHandler struct {
+type recoverHandler struct {
 	Action func(error)
-	Next   http.Handler
+	next   http.Handler
 }
 
-func (h *RecoverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *recoverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		r := recover()
@@ -29,12 +29,12 @@ func (h *RecoverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}()
-	h.Next.ServeHTTP(w, r)
+	h.next.ServeHTTP(w, r)
 }
 
 func Recover(h http.Handler) http.Handler {
 	return &RecoverHandler{
 		Action: log.Println,
-		Next:   h,
+		next:   h,
 	}
 }
