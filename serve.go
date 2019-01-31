@@ -6,28 +6,43 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+
+	"github.com/coreos/go-systemd/activation"
 )
 
 func Serve(port, socket string, handler http.Handler) {
-	if socket == "" {
+	listeners, err := activation.Listeners(true)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(listeners) == 1 {
+		Socket(listeners[0], handler, "")
+	} else if socket == "" {
 		Port(port, handler)
 	} else {
-		Socket(socket, handler)
+		l, err := net.Listen("unix", socket)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		Socket(l, handler, socket)
 	}
 }
 
-func Socket(socket string, handler http.Handler) {
-	l, err := net.Listen("unix", socket)
-	if err != nil {
-		log.Println(err)
-		return
+func Socket(l net.Listener, handler http.Handler, socket string) {
+	defer l.Close()
+	if socket != "" {
+		defer os.Remove(socket)
 	}
 
-	defer l.Close()
-	defer os.Remove(socket)
-
 	go func() {
-		log.Println("listening on", socket)
+		if socket == "" {
+			log.Println("listening on systemd provided socket")
+		} else {
+			log.Println("listening on", socket)
+		}
 		if err := http.Serve(l, handler); err != nil {
 			log.Println(err)
 		}
