@@ -11,7 +11,7 @@ import (
 )
 
 func Serve(port, socket string, handler http.Handler) {
-	listeners, err := activation.Listeners(true)
+	listeners, err := activation.Listeners()
 	if err != nil {
 		panic(err)
 	}
