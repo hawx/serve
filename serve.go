@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"context"
 	"log"
 	"net"
 	"net/http"
@@ -11,15 +12,19 @@ import (
 )
 
 func Serve(port, socket string, handler http.Handler) {
+	Server(port, socket, &http.Server{Handler: handler})
+}
+
+func Server(port, socket string, srv *http.Server) {
 	listeners, err := activation.Listeners()
 	if err != nil {
 		panic(err)
 	}
 
 	if len(listeners) == 1 {
-		Socket(listeners[0], handler, "")
+		onSocket(listeners[0], "", srv)
 	} else if socket == "" {
-		Port(port, handler)
+		onPort(port, srv)
 	} else {
 		l, err := net.Listen("unix", socket)
 		if err != nil {
@@ -27,11 +32,23 @@ func Serve(port, socket string, handler http.Handler) {
 			return
 		}
 
-		Socket(l, handler, socket)
+		onSocket(l, socket, srv)
 	}
 }
 
-func Socket(l net.Listener, handler http.Handler, socket string) {
+func onPort(port string, srv *http.Server) {
+	go func() {
+		srv.Addr = ":" + port
+		log.Println("listening on port :" + port)
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	catchInterrupt(srv)
+}
+
+func onSocket(l net.Listener, socket string, srv *http.Server) {
 	defer l.Close()
 	if socket != "" {
 		defer os.Remove(socket)
@@ -43,29 +60,20 @@ func Socket(l net.Listener, handler http.Handler, socket string) {
 		} else {
 			log.Println("listening on", socket)
 		}
-		if err := http.Serve(l, handler); err != nil {
+		if err := srv.Serve(l); err != nil {
 			log.Println(err)
 		}
 	}()
 
-	catchInterrupt()
+	catchInterrupt(srv)
 }
 
-func Port(port string, handler http.Handler) {
-	go func() {
-		log.Println("listening on port :" + port)
-		if err := http.ListenAndServe(":"+port, handler); err != nil {
-			log.Println(err)
-		}
-	}()
-
-	catchInterrupt()
-}
-
-func catchInterrupt() {
+func catchInterrupt(srv *http.Server) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	s := <-c
-	log.Printf("caught %s: shutting down", s)
+	log.Printf("caught %s: shutting down\n", s)
+
+	srv.Shutdown(context.Background())
 }
