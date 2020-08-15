@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/coreos/go-systemd/activation"
 )
@@ -70,7 +71,7 @@ func onSocket(l net.Listener, socket string, srv *http.Server) {
 
 func catchInterrupt(srv *http.Server) {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
 	s := <-c
 	log.Printf("caught %s: shutting down\n", s)
